@@ -13,9 +13,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -45,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
 sealed class Screen(val route: String, val title: String, val icon: @Composable () -> Unit) {
     object Soundboard : Screen("soundboard", "Soundboard", { Icon(Icons.Default.Home, contentDescription = null) })
-    object Gallery : Screen("gallery", "Gallery", { Icon(Icons.Default.List, contentDescription = null) })
+    object Gallery : Screen("gallery", "Gallery", { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) })
 }
 
 @Composable
@@ -96,27 +98,58 @@ fun SoundboardScreen() {
 
     LaunchedEffect(Unit) {
         val soundFiles = context.assets.list("sounds")?.filter { it.endsWith(".aac") } ?: emptyList()
-        sounds = soundFiles.map { fileName ->
-            // Use the filename without extension as the name
-            val name = fileName.substringBeforeLast(".")
+        // Sort files to ensure they appear in order (e.g., WA0002, WA0003...)
+        sounds = soundFiles.sorted().mapIndexed { index, fileName ->
+            // Use "Navin" + the sequence number for cleaner display
+            val name = "Navin ${index + 1}"
             SoundItem(name, fileName)
         }
     }
 
-    if (sounds.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No .aac sounds found in assets/sounds")
-        }
-    } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize()
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Title and Profile Image Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            items(sounds) { sound ->
-                SoundButton(sound)
+            Text(
+                text = "Pocket Navin",
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Surface(
+                modifier = Modifier.size(64.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                // To use your own image:
+                // 1. Place it in res/drawable (e.g., navin_profile.jpg)
+                // 2. Replace R.drawable.ic_launcher_foreground with R.drawable.navin_profile
+                Image(
+                    painter = painterResource(id = R.drawable.navin_profile),
+                    contentDescription = "Navin",
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+
+        if (sounds.isEmpty()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("No .aac sounds found in assets/sounds")
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2), // Changed to 2 for larger buttons
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(sounds) { sound ->
+                    SoundButton(sound)
+                }
             }
         }
     }
@@ -132,18 +165,21 @@ fun SoundButton(sound: SoundItem) {
         }
     ) {
         Surface(
-            modifier = Modifier.size(80.dp),
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.primaryContainer
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f), // Square buttons
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shadowElevation = 4.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(text = "▶", style = MaterialTheme.typography.headlineMedium)
+                Text(text = "▶", style = MaterialTheme.typography.displaySmall)
             }
         }
         Text(
             text = sound.name,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 4.dp),
+            style = MaterialTheme.typography.titleMedium, // Slightly larger text
+            modifier = Modifier.padding(top = 8.dp),
             maxLines = 1
         )
     }
@@ -176,20 +212,28 @@ fun GalleryScreen() {
         } ?: emptyList()
     }
 
-    if (images.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("No images found in assets/images")
-        }
-    } else {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(images) { imageName ->
-                GalleryImage(imageName)
+    Column(modifier = Modifier.fillMaxSize()) {
+        Text(
+            text = "Navin's best bits",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(16.dp)
+        )
+
+        if (images.isEmpty()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Text("No images found in assets/images")
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(images) { imageName ->
+                    GalleryImage(imageName)
+                }
             }
         }
     }
